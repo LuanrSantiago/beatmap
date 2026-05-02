@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Numeric, DateTime, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
 from app.database import Base
@@ -14,6 +15,8 @@ class Venue(Base):
     address    = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    events     = relationship("Event", back_populates="venue")
+
 class Event(Base):
     __tablename__ = "events"
 
@@ -26,3 +29,5 @@ class Event(Base):
     source_id    = Column(UUID(as_uuid=True), ForeignKey("scraper_sources.id"))
     scraped_at   = Column(DateTime(timezone=True), server_default=func.now())
     created_at   = Column(DateTime(timezone=True), server_default=func.now())
+
+    venue        = relationship("Venue", back_populates="events")

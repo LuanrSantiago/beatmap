@@ -2,12 +2,15 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import get_db
+from app.routes import events
 
 app = FastAPI(
     title="BeatMap API",
     description="Radar de eventos de música eletrônica",
     version="0.1.0"
 )
+
+app.include_router(events.router)
 
 @app.get("/")
 def root():
