@@ -26,6 +26,18 @@ def get_sympla_source_id(db: Session):
     ).fetchone()
     return result[0] if result else None
 
+def atualizar_last_scraped(db: Session, source_name: str):
+    from datetime import datetime, timezone
+    db.execute(
+        text("""
+            UPDATE scraper_sources
+            SET last_scraped_at = :now
+            WHERE name = :name
+        """),
+        {"now": datetime.now(timezone.utc), "name": source_name}
+    )
+    db.commit()
+
 def save_eventos(eventos: list[dict]) -> dict:
     db = SessionLocal()
     criados = 0
@@ -73,7 +85,10 @@ def save_eventos(eventos: list[dict]) -> dict:
                 erros += 1
                 print(f"  ✗ erro: {ev.get('nome')} — {e}")
 
+        atualizar_last_scraped(db, "Sympla")
+
     finally:
         db.close()
 
     return {"criados": criados, "duplicatas": duplicatas, "erros": erros}
+

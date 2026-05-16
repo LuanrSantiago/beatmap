@@ -54,9 +54,9 @@ def parse_local(local_raw: str) -> tuple[str, str, str]:
     except Exception:
         return local_raw, "", "SP"
 
-async def scrape_sympla():
+async def scrape_sympla(headless: bool = False):
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=False)
+        browser = await p.chromium.launch(headless=headless)
         page = await browser.new_page()
 
         print("Abrindo Sympla...")
