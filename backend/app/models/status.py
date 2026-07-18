@@ -9,12 +9,12 @@ class UserEventStatus(Base):
     __tablename__ = "user_event_status"
 
     id         = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id    = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    event_id   = Column(UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False)
-    status     = Column(
-        SAEnum("going", "thinking", "bought", "not_going", name="attendance_status"),
-        nullable=False
-    )
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    event = relationship("Event")
+    # FK para users removida temporariamente — SQLAlchemy não tem model para
+    # a tabela users (gerenciada pelo Supabase Auth). Volta na Fase 5 com JWT.
+    user_id    = Column(UUID(as_uuid=True), nullable=False)
+
+    event_id   = Column(UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False)
+    status     = Column(SAEnum("going", "thinking", "bought", "not_going", name="attendance_status"), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    event      = relationship("Event")

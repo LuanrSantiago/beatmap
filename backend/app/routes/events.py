@@ -15,7 +15,7 @@ def list_events(
     db:   Session = Depends(get_db),
     city: str     = Query(None, description="Filtrar por cidade"),
     skip: int     = Query(0,    ge=0),
-    limit: int    = Query(20,   ge=1, le=100),
+    limit: int    = Query(50,   ge=1, le=500),
 ):
     query = (
         db.query(Event)

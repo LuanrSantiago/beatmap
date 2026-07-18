@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.database import get_db
-from app.routes import events
-from app.routes import status          # <- adiciona
+from app.routes import events, status
 
 app = FastAPI(
     title="BeatMap API",
@@ -11,8 +11,17 @@ app = FastAPI(
     version="0.1.0"
 )
 
+# CORS — permite que o frontend (porta 5173) fale com o backend (porta 8000)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(events.router)
-app.include_router(status.router)      # <- adiciona
+app.include_router(status.router)
 
 @app.get("/")
 def root():
