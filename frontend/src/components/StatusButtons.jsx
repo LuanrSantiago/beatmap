@@ -2,13 +2,8 @@
 
 import { useState } from "react"
 
-function StatusButtons({ eventoId, statusAtual, aoAtualizar }) {
+function StatusButtons({ eventoId, statusAtual, aoAtualizar, sessao, aoExigirLogin }) {
 
-  // ─── FEEDBACK VISUAL (item 3) ──────────────────────────────
-  // Guarda qual botão está sendo processado no momento.
-  // null = nenhum processando
-  // "going" = botão Vou está aguardando a API responder
-  // Isso evita cliques duplos e mostra "..." enquanto processa
   const [processando, setProcessando] = useState(null)
 
   const botoes = [
@@ -19,15 +14,24 @@ function StatusButtons({ eventoId, statusAtual, aoAtualizar }) {
   ]
 
   async function clicarStatus(valor) {
-    // Ignora clique se já está ativo ou se outro botão está processando
     if (valor === statusAtual || processando) return
+
+    // NOVO: se não está logado, dispara o login em vez de chamar a API
+    if (!sessao) {
+      aoExigirLogin()
+      return
+    }
 
     setProcessando(valor)
 
     try {
       const resposta = await fetch("http://127.0.0.1:8000/status/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // NOVO: token do usuário logado, pra API saber quem está marcando
+          Authorization: `Bearer ${sessao.access_token}`,
+        },
         body: JSON.stringify({ event_id: eventoId, status: valor }),
       })
 
@@ -37,8 +41,6 @@ function StatusButtons({ eventoId, statusAtual, aoAtualizar }) {
     } catch (erro) {
       console.error("Erro ao atualizar status:", erro)
     } finally {
-      // finally roda sempre — com sucesso OU com erro
-      // Garante que o loading some mesmo se a API falhar
       setProcessando(null)
     }
   }
