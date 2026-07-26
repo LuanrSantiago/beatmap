@@ -1,6 +1,7 @@
 // src/components/StatusButtons.jsx
 
 import { useState } from "react"
+import { API_URL } from "../config"
 
 function StatusButtons({ eventoId, statusAtual, aoAtualizar, sessao, aoExigirLogin }) {
 
@@ -25,7 +26,7 @@ function StatusButtons({ eventoId, statusAtual, aoAtualizar, sessao, aoExigirLog
     setProcessando(valor)
 
     try {
-      const resposta = await fetch("http://127.0.0.1:8000/status/", {
+      const resposta = await fetch(`${API_URL}/status/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

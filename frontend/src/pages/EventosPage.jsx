@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import StatusButtons from "../components/StatusButtons"
 import { supabase } from "../supabaseClient"
+import { API_URL } from "../config"
 
 function EventosPage({ sessao }) {
 
@@ -31,7 +32,7 @@ function EventosPage({ sessao }) {
 
   useEffect(() => {
     // Eventos são públicos — sempre busca, logado ou não
-    fetch("http://127.0.0.1:8000/events/?limit=200")
+    fetch(`${API_URL}/events/?limit=200`)
       .then(r => r.json())
       .then(dadosEventos => {
         const ordenados = dadosEventos.sort(
@@ -49,7 +50,7 @@ function EventosPage({ sessao }) {
       return
     }
 
-    fetch("http://127.0.0.1:8000/status/", {
+    fetch(`${API_URL}/status/`, {
       headers: {
         Authorization: `Bearer ${sessao.access_token}`
       }
