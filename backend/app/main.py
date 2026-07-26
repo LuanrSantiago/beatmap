@@ -14,12 +14,14 @@ app = FastAPI(
 # CORS — permite que o frontend (porta 5173) fale com o backend (porta 8000)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://beatmap-lake.vercel.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(events.router)
 app.include_router(status.router)
 
