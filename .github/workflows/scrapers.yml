@@ -1,11 +1,9 @@
 name: Scrapers diários
-
 on:
+      # 9h e 9h15 no horário de Brasília (UTC-3, sem horário de verão desde 2019)
   schedule:
-    # 9h e 9h15 no horário de Brasília (UTC-3, sem horário de verão desde 2019)
     - cron: "0 12 * * *"
-    - cron: "15 12 * * *"
-  workflow_dispatch: {}  # permite rodar manualmente pela aba Actions no GitHub
+  workflow_dispatch: {}
 
 jobs:
   run-scrapers:
