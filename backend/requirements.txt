@@ -18,6 +18,6 @@ typing_extensions==4.15.0
 uvicorn==0.47.0
 pyjwt==2.13.0
 cryptography==49.0.0
-playwright==1.59.0
-apscheduler==3.11.2
-pytz==2026.2
+playwright==1.61.0
+apscheduler==3.11.3
+pytz==2026.3.post1
