@@ -19,7 +19,6 @@ uvicorn==0.47.0
 pyjwt==2.13.0
 cryptography==49.0.0
 playwright==1.61.0
-apscheduler==3.11.3
 pytz==2026.3.post1
 pytest==8.3.4
 httpx==0.28.1

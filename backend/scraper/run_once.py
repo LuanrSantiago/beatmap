@@ -1,11 +1,9 @@
 """
 scraper/run_once.py — BeatMap
 Executa os scrapers uma única vez (usado pelo GitHub Actions).
-Substitui o BlockingScheduler do scheduler.py, que ficava rodando
-continuamente — aqui cada scraper roda e o processo termina.
 """
 import logging
-from scraper.scheduler import job_sympla, job_ticket360
+from scraper.jobs import job_sympla, job_ticket360
 
 logging.basicConfig(
     level=logging.INFO,
