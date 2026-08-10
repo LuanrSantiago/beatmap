@@ -42,5 +42,10 @@ def get_current_user_id(authorization: str = Header(...)) -> str:
         raise HTTPException(status_code=401, detail="Token expirado")
     except jwt.InvalidTokenError as e:
         raise HTTPException(status_code=401, detail=f"Token inválido: {str(e)}")
+    except jwt.PyJWKClientError as e:
+        # Token estruturalmente ilegível (ex: string aleatória, não um JWT de
+        # verdade) — get_signing_key_from_jwt lança isso ANTES de chegar no
+        # jwt.decode, então sem esse except caía num 500 não tratado.
+        raise HTTPException(status_code=401, detail=f"Token inválido: {str(e)}")
 
-    return payload["sub"]
+    return payload["sub"]  # "sub" é o ID do usuário dentro do token
