@@ -13,4 +13,4 @@ class ScraperSource(Base):
     status          = Column(SAEnum("active", "paused", "error", name="source_status"), nullable=False, default="active")
     last_scraped_at = Column(DateTime(timezone=True))
     error_message   = Column(Text)
-    created_at      = Column(DateTime(timezone=True), server_default=func.now())
+    created_at      = Column(DateTime(timezone=True), nullable=False, server_default=func.now())

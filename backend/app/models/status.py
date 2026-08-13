@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Enum as SAEnum
+from sqlalchemy import Column, DateTime, ForeignKey, Enum as SAEnum, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -13,5 +13,11 @@ class UserEventStatus(Base):
     user_id    = Column(UUID(as_uuid=True), ForeignKey("auth.users.id", ondelete="CASCADE"), nullable=False)
     event_id   = Column(UUID(as_uuid=True), ForeignKey("events.id", ondelete="CASCADE"), nullable=False)
     status     = Column(SAEnum("going", "thinking", "bought", "not_going", name="attendance_status"), nullable=False)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now())
     event      = relationship("Event")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "event_id", name="uq_user_event"),
+        Index("idx_status_user", "user_id"),
+        Index("idx_status_event", "event_id"),
+    )
