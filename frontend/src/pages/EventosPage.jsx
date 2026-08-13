@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import StatusButtons from "../components/StatusButtons"
+import CityFilter from "../components/CityFilter"
+import DateFilter from "../components/DateFilter"
 import { supabase } from "../supabaseClient"
 import { API_URL } from "../config"
 
@@ -76,25 +78,6 @@ function EventosPage({ sessao }) {
 
   // ─── LÓGICA DE FILTRO ──────────────────────────────────────
 
-  const cidades = [
-    "Todas",
-    ...new Set(eventos.map(e => e.venue?.city).filter(Boolean))
-  ]
-
-  const periodos = ["", ...new Set(
-    eventos.map(e => {
-      const d = new Date(e.event_date)
-      return `${d.getMonth() + 1}/${d.getFullYear()}`
-    })
-  )]
-
-  function formatarPeriodo(periodo) {
-    if (periodo === "") return "Todos"
-    const [mes, ano] = periodo.split("/")
-    const nomes = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"]
-    return `${nomes[parseInt(mes) - 1]} ${ano}`
-  }
-
   const eventosFiltrados = eventos
     .filter(e => cidadeSelecionada === "Todas" || e.venue?.city === cidadeSelecionada)
     .filter(e => {
@@ -166,36 +149,22 @@ function EventosPage({ sessao }) {
 
       {/* Filtro por cidade */}
       <p className="text-gray-500 text-xs uppercase tracking-widest mb-2 mt-6">Cidade</p>
-      <div className="flex flex-wrap gap-2 mb-6">
-        {cidades.map(cidade => (
-          <button
-            key={cidade}
-            onClick={() => setCidadeSelecionada(cidade)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors
-              ${cidadeSelecionada === cidade
-                ? "bg-purple-600 text-white"
-                : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-              }`}
-          >
-            {cidade}
-          </button>
-        ))}
-      </div>
+      <CityFilter
+        eventos={eventos}
+        cidadeSelecionada={cidadeSelecionada}
+        aoSelecionar={setCidadeSelecionada}
+      />
 
       {/* Filtro por mês */}
-      <p className="text-gray-500 text-xs uppercase tracking-widest mb-2">Data</p>
-      <select
-        value={periodoSelecionado}
-        onChange={e => setPeriodoSelecionado(e.target.value)}
-        className="mb-8 bg-gray-800 text-gray-300 text-sm rounded-lg px-4 py-2 border border-gray-700 focus:outline-none focus:border-purple-500"
-      >
-        {periodos.map(p => (
-          <option key={p} value={p}>{formatarPeriodo(p)}</option>
-        ))}
-      </select>
+      <p className="text-gray-500 text-xs uppercase tracking-widest mb-2 mt-6">Data</p>
+      <DateFilter
+        eventos={eventos}
+        periodoSelecionado={periodoSelecionado}
+        aoSelecionar={setPeriodoSelecionado}
+      />
 
       {/* Grid de cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
         {eventosFiltrados.map(evento => (
           <div
             key={evento.id}
