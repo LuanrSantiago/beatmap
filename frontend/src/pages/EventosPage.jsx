@@ -1,6 +1,7 @@
 // src/pages/EventosPage.jsx
 
 import { useState, useEffect } from "react"
+import { Link } from "react-router-dom"
 import StatusButtons from "../components/StatusButtons"
 import CityFilter from "../components/CityFilter"
 import DateFilter from "../components/DateFilter"
@@ -117,34 +118,40 @@ function EventosPage({ sessao }) {
           <p className="text-gray-400">{eventosFiltrados.length} eventos encontrados</p>
         </div>
 
-        {/* Indicador de login no topo */}
-        {sessao ? (
-          <div className="flex items-center gap-3">
-            {sessao.user.user_metadata?.avatar_url && (
-              <img
-                src={sessao.user.user_metadata.avatar_url}
-                alt="Avatar"
-                className="w-8 h-8 rounded-full"
-              />
-            )}
-            <span className="text-gray-300 text-sm">
-              Olá, {sessao.user.user_metadata?.full_name || sessao.user.email}
-            </span>
+        {/* Link para Minhas Interações + Indicador de login no topo */}
+        <div className="flex items-center gap-4">
+          <Link to="/minhas-interacoes" className="text-sm text-gray-300 hover:text-white underline">
+            🎟️ Minhas Interações
+          </Link>
+
+          {sessao ? (
+            <div className="flex items-center gap-3">
+              {sessao.user.user_metadata?.avatar_url && (
+                <img
+                  src={sessao.user.user_metadata.avatar_url}
+                  alt="Avatar"
+                  className="w-8 h-8 rounded-full"
+                />
+              )}
+              <span className="text-gray-300 text-sm">
+                Olá, {sessao.user.user_metadata?.full_name || sessao.user.email}
+              </span>
+              <button
+                onClick={sair}
+                className="text-xs text-gray-400 hover:text-white underline"
+              >
+                Sair
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={sair}
-              className="text-xs text-gray-400 hover:text-white underline"
+              onClick={entrarComGoogle}
+              className="text-sm text-gray-300 hover:text-white underline"
             >
-              Sair
+              Entrar com Google
             </button>
-          </div>
-        ) : (
-          <button
-            onClick={entrarComGoogle}
-            className="text-sm text-gray-300 hover:text-white underline"
-          >
-            Entrar com Google
-          </button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Filtro por cidade */}

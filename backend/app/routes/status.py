@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from uuid import UUID
 
 from app.database import get_db
 from app.models.status import UserEventStatus
 from app.models.event import Event
-from app.schemas.status import StatusIn, StatusOut
+from app.schemas.status import StatusIn, StatusOut, StatusDetalhadoOut
 from app.auth import get_current_user_id
 
 router = APIRouter(prefix="/status", tags=["status"])
@@ -49,6 +49,25 @@ def list_status(
 ):
     return (
         db.query(UserEventStatus)
+        .filter_by(user_id=user_id)
+        .all()
+    )
+
+
+# ─── NOVO: status + dados do evento, para a tela "Minhas Interações" ──
+@router.get("/detalhado/", response_model=list[StatusDetalhadoOut])
+def list_status_detalhado(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user_id),
+):
+    """
+    Igual a list_status(), mas já vem com o evento (e o venue dele)
+    carregado junto — joinedload evita uma query separada por evento
+    (problema N+1), faz tudo numa única consulta com JOIN.
+    """
+    return (
+        db.query(UserEventStatus)
+        .options(joinedload(UserEventStatus.event).joinedload(Event.venue))
         .filter_by(user_id=user_id)
         .all()
     )

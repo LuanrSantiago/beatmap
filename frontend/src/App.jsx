@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
+import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { supabase } from "./supabaseClient"
 import EventosPage from "./pages/EventosPage"
+import MinhasInteracoesPage from "./pages/MinhasInteracoesPage"
 
 function App() {
   const [sessao, setSessao] = useState(null)
@@ -28,7 +30,14 @@ function App() {
     return <div className="text-white p-8">Carregando...</div>
   }
 
-  return <EventosPage sessao={sessao} />
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<EventosPage sessao={sessao} />} />
+        <Route path="/minhas-interacoes" element={<MinhasInteracoesPage sessao={sessao} />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }
 
 export default App
