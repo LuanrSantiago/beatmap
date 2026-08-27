@@ -10,7 +10,7 @@ function formatarPeriodo(periodo) {
   return `${NOMES_MES[parseInt(mes) - 1]} ${ano}`
 }
 
-function DateFilter({ eventos, periodoSelecionado, aoSelecionar }) {
+function DateFilter({ periodos, periodoSelecionado, aoSelecionar }) {
   const [busca, setBusca] = useState("")
   const [aberto, setAberto] = useState(false)
   const containerRef = useRef(null)
@@ -25,13 +25,9 @@ function DateFilter({ eventos, periodoSelecionado, aoSelecionar }) {
     return () => document.removeEventListener("mousedown", aoClicarFora)
   }, [])
 
-  // ─── Contagem de eventos por período ───────────────────────
+  // ─── Contagem por período, vinda do backend ────────────────
   const contagem = {}
-  eventos.forEach(e => {
-    const d = new Date(e.event_date)
-    const chave = `${d.getMonth() + 1}/${d.getFullYear()}`
-    contagem[chave] = (contagem[chave] || 0) + 1
-  })
+  periodos.forEach(p => { contagem[p.periodo] = p.total })
 
   // ─── Períodos em destaque: mês atual + próximos QTD_DESTAQUE - 1 ───
   const hoje = new Date()

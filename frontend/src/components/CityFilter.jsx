@@ -3,12 +3,11 @@ import { useState, useRef, useEffect } from "react"
 const CIDADE_FIXA = "Nova Lima"
 const QTD_DESTAQUE = 5 // total de cidades no destaque, incluindo a fixa
 
-function CityFilter({ eventos, cidadeSelecionada, aoSelecionar }) {
+function CityFilter({ cidades, cidadeSelecionada, aoSelecionar }) {
   const [busca, setBusca] = useState("")
   const [aberto, setAberto] = useState(false)
   const containerRef = useRef(null)
 
-  // Fecha o dropdown ao clicar fora dele
   useEffect(() => {
     function aoClicarFora(e) {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -19,13 +18,9 @@ function CityFilter({ eventos, cidadeSelecionada, aoSelecionar }) {
     return () => document.removeEventListener("mousedown", aoClicarFora)
   }, [])
 
-  // ─── Contagem de eventos por cidade ───────────────────────
+  // ─── Contagem por cidade, vinda do backend ─────────────────
   const contagem = {}
-  eventos.forEach(e => {
-    const cidade = e.venue?.city
-    if (!cidade) return
-    contagem[cidade] = (contagem[cidade] || 0) + 1
-  })
+  cidades.forEach(c => { contagem[c.cidade] = c.total })
 
   // Garante que a cidade fixa sempre exista, mesmo com 0 eventos
   if (!(CIDADE_FIXA in contagem)) {
@@ -37,8 +32,6 @@ function CityFilter({ eventos, cidadeSelecionada, aoSelecionar }) {
   )
 
   // ─── Cidades em destaque (atalhos fixos) ───────────────────
-  // Pega as N-1 cidades com mais eventos, excluindo a fixa, depois
-  // adiciona a fixa e ordena tudo alfabeticamente.
   const outrasPorVolume = Object.entries(contagem)
     .filter(([cidade]) => cidade !== CIDADE_FIXA)
     .sort((a, b) => b[1] - a[1])
