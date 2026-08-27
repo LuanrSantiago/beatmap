@@ -1,6 +1,12 @@
 """
 scraper/sympla.py — BeatMap
-Versão 2.1 — Multi-cidades + Paginação por botões (corrigido)
+Versão 2.2 — Multi-cidades + Paginação por botões + Filtro de gênero eletrônico
+
+MUDANÇAS v2.2:
+- NOVO: filtro de gênero eletrônico (scraper/genre_filter.py), em duas camadas:
+  Camada 1 (título, sem custo de rede) e Camada 2 (descrição da página do
+  evento, só para títulos ambíguos — abre uma aba separada, sem atrapalhar
+  a navegação da listagem principal)
 
 MUDANÇAS v2.1 (correções):
 - CORRIGIDO: paginação agora clica no botão "Próximo >" em vez de fazer scroll
@@ -14,6 +20,8 @@ import asyncio
 import re
 from playwright.async_api import async_playwright
 from datetime import datetime
+
+from scraper.genre_filter import classificar_titulo, contem_exclusao
 
 # ─────────────────────────────────────────────
 # CONFIGURAÇÕES
@@ -199,14 +207,53 @@ async def _ir_para_proxima_pagina(page) -> bool:
         return False
 
 # ─────────────────────────────────────────────
+# FILTRO DE GÊNERO — CAMADA 2 (descrição, só para títulos ambíguos)
+# ─────────────────────────────────────────────
+
+async def _checar_descricao_ambigua(browser, url_evento: str | None) -> bool:
+    """
+    Abre a página do evento numa aba SEPARADA (sem mexer na aba principal
+    que está navegando pelas páginas de listagem) e lê a tag
+    <meta property="og:description"> — mais leve que esperar a página
+    inteira renderizar, e contém o mesmo texto da descrição completa.
+
+    Retorna True se a descrição tiver alguma palavra de exclusão (evento
+    deve ser descartado). Em caso de erro (timeout, página fora do ar,
+    etc.), retorna False — não descarta o evento por falha de rede, só
+    por conteúdo real da descrição.
+    """
+    if not url_evento:
+        return False
+
+    pagina_detalhe = None
+    try:
+        pagina_detalhe = await browser.new_page()
+        await pagina_detalhe.goto(url_evento, wait_until="domcontentloaded", timeout=15000)
+        meta = await pagina_detalhe.query_selector("meta[property='og:description']")
+        descricao = await meta.get_attribute("content") if meta else ""
+        return contem_exclusao(descricao or "")
+    except Exception as e:
+        print(f"    ⚠ erro ao checar descrição (mantendo evento): {e}")
+        return False
+    finally:
+        if pagina_detalhe:
+            await pagina_detalhe.close()
+
+
+# ─────────────────────────────────────────────
 # PROCESSAMENTO DE CARDS
 # ─────────────────────────────────────────────
 
-async def _processar_card(card, cidade: str, estado: str) -> dict | None:
+async def _processar_card(card, cidade: str, estado: str, browser) -> dict | None:
     """
     Extrai os dados de um card de evento.
 
-    Retorna um dicionário com os dados, ou None se o card for inválido.
+    Retorna um dicionário com os dados, ou None se o card for inválido
+    ou reprovado no filtro de gênero.
+
+    NOVO v2.2: aplica o filtro de gênero eletrônico logo após extrair o
+    título — Camada 1 decide na hora; Camada 2 (mais cara, visita a página
+    do evento) só roda se o título for ambíguo.
 
     CORRIGIDO v2.1: retorna None se a data não for parseável.
     Antes deixava data=None passar → banco reclamava de NOT NULL.
@@ -217,6 +264,13 @@ async def _processar_card(card, cidade: str, estado: str) -> dict | None:
         nome = (await nome_el.inner_text()).strip() if nome_el else None
         if not nome:
             return None
+
+        # ── Filtro de gênero — Camada 1 (título) ────────────────────
+        classificacao = classificar_titulo(nome)
+        if classificacao == "rejeitado":
+            print(f"  ✗ gênero rejeitado (título): {nome}")
+            return None
+        # ─────────────────────────────────────────────────────────
 
         local_el = await card.query_selector("p.pn67h1h")
         local_raw = (await local_el.inner_text()).strip() if local_el else ""
@@ -229,7 +283,15 @@ async def _processar_card(card, cidade: str, estado: str) -> dict | None:
             link_el = await card.query_selector("a")
             url_evento = await link_el.get_attribute("href") if link_el else None
 
-        # ── CORRIGIDO: filtra sem data aqui ──────────────────────
+        # ── Filtro de gênero — Camada 2 (descrição, só se ambíguo) ──
+        if classificacao == "ambiguo":
+            rejeitado_pela_descricao = await _checar_descricao_ambigua(browser, url_evento)
+            if rejeitado_pela_descricao:
+                print(f"  ✗ gênero rejeitado (descrição): {nome}")
+                return None
+        # ─────────────────────────────────────────────────────────
+
+        # ── filtra sem data aqui ──────────────────────────────────
         if not data_raw:
             print(f"  ⚠ sem data (ignorado): {nome}")
             return None
@@ -267,7 +329,7 @@ async def _processar_card(card, cidade: str, estado: str) -> dict | None:
 # SCRAPER POR CIDADE
 # ─────────────────────────────────────────────
 
-async def scrape_cidade(page, cidade_info: dict) -> list[dict]:
+async def scrape_cidade(page, cidade_info: dict, browser) -> list[dict]:
     """
     Raspa TODAS as páginas de eventos de uma cidade.
 
@@ -276,6 +338,9 @@ async def scrape_cidade(page, cidade_info: dict) -> list[dict]:
     2. Extrai os cards da página 1
     3. Clica em "Próximo" → extrai página 2
     4. Repete até não ter mais "Próximo"
+
+    NOVO v2.2: recebe `browser` para poder abrir abas separadas na Camada 2
+    do filtro de gênero, sem interromper a navegação da página de listagem.
     """
     cidade = cidade_info["cidade"]
     estado = cidade_info["estado"]
@@ -315,7 +380,7 @@ async def scrape_cidade(page, cidade_info: dict) -> list[dict]:
             print(f"  → {len(cards)} cards encontrados")
 
             for card in cards:
-                evento = await _processar_card(card, cidade, estado)
+                evento = await _processar_card(card, cidade, estado, browser)
                 if evento:
                     resultados.append(evento)
                     print(f"    ✓ {evento['nome']}")
@@ -352,11 +417,11 @@ async def scrape_sympla(headless: bool = False) -> list[dict]:
         browser = await p.chromium.launch(headless=headless)
         page = await browser.new_page()
 
-        print(f"🎵 BeatMap Scraper — Sympla v2.1")
+        print(f"🎵 BeatMap Scraper — Sympla v2.2")
         print(f"📍 Cidades: {len(CIDADES)}")
 
         for cidade_info in CIDADES:
-            eventos_cidade = await scrape_cidade(page, cidade_info)
+            eventos_cidade = await scrape_cidade(page, cidade_info, browser)
             todos_eventos.extend(eventos_cidade)
             await page.wait_for_timeout(2000)  # Pausa gentil entre cidades
 
